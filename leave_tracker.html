@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ceklist Cuti 90 Hari - Tsingshan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .day-cell { transition: all 0.2s ease-in-out; }
+        .day-cell:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col relative">
+        
+        <!-- Header -->
+        <div class="bg-blue-800 text-white p-5 shadow-md z-10">
+            <h1 class="text-xl font-bold tracking-wide flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Tsingshan Leave Tracker
+            </h1>
+            <p class="text-blue-200 text-sm mt-1">Ceklist manual 90 hari kerja</p>
+        </div>
+
+        <div class="p-5 border-b border-gray-100 bg-blue-50/50">
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Hari Kerja</span>
+                    <div class="text-3xl font-bold text-gray-800" id="counterDisplay">0 <span class="text-lg text-gray-400 font-medium">/ 90</span></div>
+                </div>
+                <button onclick="showResetModal()" class="text-sm text-red-500 hover:text-red-700 font-medium flex items-center gap-1 bg-red-50 px-2 py-1 rounded-md transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Reset
+                </button>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-3 mt-2 overflow-hidden shadow-inner">
+                <div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div id="warningBanner" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-4 shadow-sm animate-pulse">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-800 font-semibold">
+                        Peringatan Cuti!
+                    </p>
+                    <p class="text-sm text-yellow-700 mt-1">
+                        Kamu sudah memasuki masa cuti segera ajukan cuti di sistem oa tsingshan.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 pb-2 flex justify-between items-center">
+            <button onclick="changeMonth(-1)" class="p-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h2 id="monthYearDisplay" class="text-lg font-bold text-gray-800">Bulan Tahun</h2>
+            <button onclick="changeMonth(1)" class="p-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="px-5 pb-6">
+            <!-- Header Hari -->
+            <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-gray-400">
+                <div>Min</div>
+                <div>Sen</div>
+                <div>Sel</div>
+                <div>Rab</div>
+                <div>Kam</div>
+                <div>Jum</div>
+                <div>Sab</div>
+            </div>
+            
+            <!-- Tempat merender tanggal kalender -->
+            <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+                <!-- Javascript akan mengisi bagian ini -->
+            </div>
+        </div>
+
+        <!-- Modal: Target 90 Hari Tercapai -->
+        <div id="modal90Days" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-xl shadow-2xl p-6 m-4 max-w-sm w-full transform scale-95 transition-transform duration-300" id="modalContent">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-center text-gray-800 mb-2">Target Tercapai!</h3>
+                <p class="text-center text-gray-600 mb-6 font-medium text-lg">
+                    Kamu sudah memasuki masa cuti segera ajukan cuti di sistem oa tsingshan.
+                </p>
+                <button onclick="closeModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    Baik, Mengerti
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal: Konfirmasi Reset Data -->
+        <div id="modalReset" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-xl shadow-2xl p-6 m-4 max-w-sm w-full transform scale-95 transition-transform duration-300" id="modalResetContent">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-center text-gray-800 mb-2">Reset Data?</h3>
+                <p class="text-center text-gray-600 mb-6 font-medium">
+                    Anda yakin ingin mereset perhitungan hari kerja menjadi 0? Data yang sudah diceklis akan dihapus.
+                </p>
+                <div class="flex gap-3">
+                    <button onclick="closeResetModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors">
+                        Batal
+                    </button>
+                    <button onclick="confirmReset()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        Ya, Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+        
+        const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        
+        // Memuat data ceklis dari LocalStorage
+        let checkedDates = new Set(JSON.parse(localStorage.getItem('tsingshanCheckedDates')) || []);
+        const TARGET_DAYS = 90;
+
+        function updateUI() {
+            // Update Text Counter
+            const count = checkedDates.size;
+            document.getElementById('counterDisplay').innerHTML = `${count} <span class="text-lg text-gray-400 font-medium">/ 90</span>`;
+            
+            // Update Progress Bar
+            const percentage = Math.min((count / TARGET_DAYS) * 100, 100);
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = `${percentage}%`;
+
+            if (percentage === 100) {
+                progressBar.classList.remove('bg-blue-600');
+                progressBar.classList.add('bg-green-500');
+            } else {
+                progressBar.classList.remove('bg-green-500');
+                progressBar.classList.add('bg-blue-600');
+            }
+
+            // Tampilkan Banner Peringatan jika sudah >= 90
+            const warningBanner = document.getElementById('warningBanner');
+            if (count >= TARGET_DAYS) {
+                warningBanner.classList.remove('hidden');
+            } else {
+                warningBanner.classList.add('hidden');
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('tsingshanCheckedDates', JSON.stringify(Array.from(checkedDates)));
+        }
+
+        function toggleDate(dateString) {
+            const wasBelow90 = checkedDates.size < TARGET_DAYS;
+
+            if (checkedDates.has(dateString)) {
+                checkedDates.delete(dateString);
+            } else {
+                checkedDates.add(dateString);
+            }
+            
+            saveToLocalStorage();
+            renderCalendar();
+            updateUI();
+
+            // Tampilkan modal pop-up TEPAT saat mencapai 90 hari
+            const isNow90OrAbove = checkedDates.size >= TARGET_DAYS;
+            if (wasBelow90 && isNow90OrAbove) {
+                showModal();
+            }
+        }
+
+        function changeMonth(direction) {
+            currentMonth += direction;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const monthYearDisplay = document.getElementById('monthYearDisplay');
+            monthYearDisplay.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            // Tanggal hari ini untuk highlight
+            const today = new Date();
+            const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            // Sel kosong sebelum tanggal 1
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'aspect-square';
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            // Render tanggal
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isChecked = checkedDates.has(dateString);
+                const isToday = dateString === todayString;
+
+                const dayCell = document.createElement('button');
+                
+                // Styling dasar cell
+                let cellClasses = 'day-cell aspect-square rounded-full flex items-center justify-center text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 cursor-pointer relative ';
+
+                if (isChecked) {
+                    cellClasses += 'bg-blue-600 text-white shadow-md hover:bg-blue-700';
+                } else {
+                    cellClasses += 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200';
+                    if (isToday) {
+                        cellClasses += ' border-blue-500 text-blue-600 font-bold';
+                    }
+                }
+
+                dayCell.className = cellClasses;
+                
+                dayCell.innerHTML = `
+                    ${day}
+                    ${isChecked ? '<span class="absolute bottom-1 w-1 h-1 bg-white rounded-full"></span>' : ''}
+                `;
+                
+                dayCell.onclick = () => toggleDate(dateString);
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+
+        function showModal() {
+            const modal = document.getElementById('modal90Days');
+            const content = document.getElementById('modalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal90Days');
+            const content = document.getElementById('modalContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Custom Reset Modal Functions
+        function showResetModal() {
+            const modal = document.getElementById('modalReset');
+            const content = document.getElementById('modalResetContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('modalReset');
+            const content = document.getElementById('modalResetContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function confirmReset() {
+            checkedDates.clear();
+            saveToLocalStorage();
+            renderCalendar();
+            updateUI();
+            closeResetModal();
+        }
+
+        // Inisialisasi awal saat load
+        window.onload = () => {
+            renderCalendar();
+            updateUI();
+        };
+    </script>
+</body>
+</html>
