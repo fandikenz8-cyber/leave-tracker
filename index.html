@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Check-Lok Tracker</title>
+<style>
+:root {
+  --primary: #2563eb; --primary-dark: #1d4ed8; --success: #16a34a;
+  --warning: #f59e0b; --danger: #ef4444; --bg: #f1f5f9;
+  --card: #ffffff; --text: #1e293b; --text-light: #64748b; --border: #e2e8f0;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.header { background: var(--primary); color: white; padding: 16px 20px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.header h1 { font-size: 20px; font-weight: 700; }
+.header p { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+.config-banner { background: #fffbebfb; border-bottom: 2px solid #fcd34d; padding: 12px 16px; font-size: 13px; text-align: center; }
+.config-banner input { width: 100%; max-width: 500px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; margin-top: 6px; }
+.config-banner button { background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 6px; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 16px; }
+.stat-card { background: var(--card); border-radius: 12px; padding: 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.stat-card .num { font-size: 28px; font-weight: 800; color: var(--primary); }
+.stat-card .label { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+.section { padding: 0 16px 16px; }
+.section-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+
+.cal-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.cal-nav button { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+.cal-nav .month-label { font-size: 16px; font-weight: 700; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-header { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-light); padding: 6px 0; }
+.cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; font-size: 14px; cursor: pointer; border: 2px solid transparent; background: var(--card); transition: all 0.15s; position: relative; }
+.cal-day:hover { border-color: var(--primary); }
+.cal-day.today { border-color: var(--primary); background: #eff6ff; }
+.cal-day.selected { background: var(--primary); color: white; }
+.cal-day.empty { background: transparent; cursor: default; }
+.cal-day.empty:hover { border-color: transparent; }
+.cal-day .dots { display: flex; gap: 2px; margin-top: 2px; }
+.cal-day .dot { width: 5px; height: 5px; border-radius: 50%; }
+.dot.done { background: var(--success); }
+.dot.miss { background: var(--danger); }
+
+.checkin-panel { background: var(--card); border-radius: 14px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-top: 12px; }
+.checkin-date { font-size: 15px; font-weight: 700; margin-bottom: 14px; color: var(--primary); }
+.checkin-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.slot { border: 2px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+.slot.done { border-color: var(--success); background: #f0fdf4; }
+.slot .time { font-size: 18px; font-weight: 800; }
+.slot .status { font-size: 11px; margin-top: 4px; color: var(--text-light); }
+.slot .photo-thumb { width: 100%; max-height: 100px; object-fit: cover; border-radius: 8px; margin-top: 8px; cursor: pointer; }
+.slot .slot-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.slot .btn-action { flex: 1; border: none; border-radius: 6px; padding: 6px; font-size: 11px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
+.slot .btn-view { background: #10b981; color: white; display: inline-block; }
+.slot .btn-replace { background: #3b82f6; color: white; }
+.slot .btn-delete { background: #ef4444; color: white; }
+.slot .btn-upload { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 8px 12px; font-size: 12px; cursor: pointer; margin-top: 8px; width: 100%; }
+
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal-overlay img { max-width: 95%; max-height: 90vh; border-radius: 8px; }
+.modal-close { position: fixed; top: 16px; right: 16px; color: white; font-size: 32px; cursor: pointer; z-index: 201; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 10px; font-size: 14px; z-index: 300; display: none; text-align: center; }
+.loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); z-index: 250; display: none; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex-direction: column; gap: 8px; }
+.loading.show { display: flex; }
+
+input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 Check-Lok Tracker</h1>
+  <p>Tracking Kehadiran Harian — 4x Check-in</p>
+</div>
+
+<div id="configBanner" class="config-banner">
+  <div>⚙️ <strong>Konfigurasi API Google Apps Script</strong></div>
+  <input id="gasUrlInput" placeholder="Paste Web App URL dari Google Apps Script di sini...">
+  <button onclick="saveGasUrl()">Simpan URL API</button>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="num" id="statTotal">0</div><div class="label">Total Hari Kerja</div></div>
+  <div class="stat-card"><div class="num" id="statComplete">0</div><div class="label">Lengkap (4/4)</div></div>
+  <div class="stat-card"><div class="num" id="statStreak">0</div><div class="label">Streak Hari</div></div>
+</div>
+
+<div class="section">
+  <div class="section-title">📅 Kalender</div>
+  <div class="cal-nav">
+    <button onclick="changeMonth(-1)">◀</button>
+    <span class="month-label" id="monthLabel"></span>
+    <button onclick="changeMonth(1)">▶</button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+</div>
+
+<div class="section">
+  <div class="checkin-panel">
+    <div class="checkin-date" id="checkinDate">Pilih tanggal</div>
+    <div class="checkin-slots" id="checkinSlots"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="photoModal" onclick="closeModal()">
+  <span class="modal-close" onclick="closeModal()">✕</span>
+  <img id="modalImg" src="">
+</div>
+<div class="loading" id="loading">⏳ Mengupload foto ke Google Drive & Sheet...</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFile(event)">
+
+<script>
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwKNkRiVzSHNK1UQeTRcSTELDPEj5_Zmt0o0umkVRnEK2Ub0D7RyDDR5u9QTKZKzGrLUQ/exec';
+const SLOTS = ['08:00','11:30','12:30','17:30'];
+const SLOT_LABELS = ['Pagi','Siang (Pre)','Siang (Post)','Sore'];
+const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const DAYS = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+
+let currentMonth, currentYear, selectedDate, checkData = {}, pendingSlot = null;
+let gasUrl = localStorage.getItem('checklok_gas_url') || DEFAULT_GAS_URL;
+
+function fmtDate(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseD(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function isWd(s) { const d=parseD(s).getDay(); return d!==0&&d!==6; }
+function todayS() { return fmtDate(new Date()); }
+
+function saveGasUrl() {
+  const val = document.getElementById('gasUrlInput').value.trim();
+  if(!val) return alert('Silakan masukkan URL!');
+  localStorage.setItem('checklok_gas_url', val);
+  gasUrl = val;
+  toast('✓ URL API Berhasil disimpan!');
+  document.getElementById('configBanner').style.display = 'none';
+  loadData().then(render);
+}
+
+async function loadData() {
+  if(!gasUrl) return;
+  try {
+    const r = await fetch(gasUrl);
+    const j = await r.json();
+    if (j.ok) checkData = j.data;
+  } catch(e) { console.error('Load failed:', e); }
+}
+
+async function init() {
+  const today = new Date();
+  currentMonth = today.getMonth();
+  currentYear = today.getFullYear();
+  selectedDate = fmtDate(today);
+
+  document.getElementById('gasUrlInput').value = gasUrl;
+  if (gasUrl === DEFAULT_GAS_URL || localStorage.getItem('checklok_gas_url')) {
+    document.getElementById('configBanner').style.display = 'none';
+  }
+
+  await loadData();
+  render();
+}
+
+function render() { renderCal(); renderCheckin(); updateStats(); }
+
+function renderCal() {
+  document.getElementById('monthLabel').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = DAYS.map(d=>`<div class="cal-header">${d}</div>`).join('');
+  const first = new Date(currentYear, currentMonth, 1).getDay();
+  const days = new Date(currentYear, currentMonth+1, 0).getDate();
+  const today = todayS();
+
+  for(let i=0;i<first;i++) grid.innerHTML+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const data=checkData[ds]||{};
+    const cnt=Object.keys(data).length;
+    const past=ds<today;
+    let cls='cal-day';
+    if(ds===today)cls+=' today';
+    if(ds===selectedDate)cls+=' selected';
+    let dots='';
+    if(isWd(ds)&&(cnt>0||past)){
+      dots='<div class="dots">';
+      SLOTS.forEach(s=>{dots+=`<span class="dot ${data[s]?'done':'miss'}"></span>`;});
+      dots+='</div>';
+    }
+    grid.innerHTML+=`<div class="${cls}" onclick="selectDate('${ds}')">${d}${dots}</div>`;
+  }
+}
+
+function changeMonth(d){currentMonth+=d;if(currentMonth>11){currentMonth=0;currentYear++;}if(currentMonth<0){currentMonth=11;currentYear--;}renderCal();}
+function selectDate(ds){selectedDate=ds;render();}
+
+function renderCheckin(){
+  const d=parseD(selectedDate);
+  document.getElementById('checkinDate').textContent=`${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  const c=document.getElementById('checkinSlots');
+  c.innerHTML='';
+  const data=checkData[selectedDate]||{};
+
+  SLOTS.forEach((slot,i)=>{
+    const info=data[slot];
+    let h=`<div class="slot${info?' done':''}">`;
+    h+=`<div class="time">${slot}</div><div class="status">${SLOT_LABELS[i]}</div>`;
+    if(info){
+      if(info.photo) h+=`<img class="photo-thumb" src="${info.photo}" onclick="showPhoto('${info.photo}')" onerror="this.style.display='none'">`;
+      h+=`<div class="status" style="color:var(--success);font-weight:600">✓ ${info.time}</div>`;
+      h+=`<div class="slot-actions">
+            <a href="${info.photo}" target="_blank" class="btn-action btn-view">🔗 Buka URL</a>
+            <button class="btn-action btn-replace" onclick="startUpload('${slot}')">🔄 Ganti</button>
+            <button class="btn-action btn-delete" onclick="deleteSlot('${slot}')">🗑️ Hapus</button>
+          </div>`;
+    } else {
+      h+=`<button class="btn-upload" onclick="startUpload('${slot}')">📸 Check-in</button>`;
+    }
+    h+='</div>';
+    c.innerHTML+=h;
+  });
+}
+
+function startUpload(slot){
+  if(!gasUrl) return alert('Silakan atur URL Google Apps Script terlebih dahulu!');
+  pendingSlot=slot;
+  document.getElementById('fileInput').click();
+}
+
+async function deleteSlot(slot){
+  if(!confirm(`Hapus foto & data check-in tanggal ${selectedDate} jam ${slot}?`)) return;
+  document.getElementById('loading').classList.add('show');
+  try{
+    const r=await fetch(gasUrl,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'delete', date:selectedDate, slot:slot})
+    });
+    const j=await r.json();
+    if(j.ok){
+      if(checkData[selectedDate]) delete checkData[selectedDate][slot];
+      render();
+      toast('✓ Data berhasil dihapus!');
+    } else { toast('❌ Gagal hapus: '+j.error); }
+  }catch(err){ toast('❌ Error: '+err.message); }
+  document.getElementById('loading').classList.remove('show');
+}
+
+function handleFile(e){
+  const file=e.target.files[0];
+  if(!file||!pendingSlot)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const img=new Image();
+    img.onload=async function(){
+      const canvas=document.createElement('canvas');
+      const scale=Math.min(800/img.width,1);
+      canvas.width=img.width*scale;canvas.height=img.height*scale;
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      const dataUrl=canvas.toDataURL('image/jpeg',0.7);
+      const b64=dataUrl.split(',')[1];
+
+      document.getElementById('loading').classList.add('show');
+      try{
+        const r=await fetch(gasUrl,{
+          method:'POST',
+          headers:{'Content-Type':'text/plain'},
+          body:JSON.stringify({action:'upload', date:selectedDate, slot:pendingSlot, photo:b64})
+        });
+        const j=await r.json();
+        if(j.ok){
+          if(!checkData[selectedDate])checkData[selectedDate]={};
+          checkData[selectedDate][pendingSlot]={time:j.time,photo:j.photo};
+          render();
+          toast('✓ Check-in berhasil! Tersimpan di Google.');
+        } else {
+          toast('❌ Gagal: '+j.error);
+        }
+      }catch(err){toast('❌ Gagal terhubung ke Google: '+err.message);}
+      document.getElementById('loading').classList.remove('show');
+      pendingSlot=null;
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+
+function updateStats(){
+  const dates=Object.keys(checkData);
+  let total=0,complete=0,streak=0;
+  dates.forEach(d=>{if(isWd(d)){total++;if(Object.keys(checkData[d]).length>=4)complete++;}});
+  const today=new Date();let cd=new Date(today);
+  while(true){
+    const ds=fmtDate(cd);
+    if(isWd(ds)&&checkData[ds]&&Object.keys(checkData[ds]).length>=4){streak++;}
+    else if(isWd(ds)&&ds!==todayS()){break;}
+    cd.setDate(cd.getDate()-1);
+    if(today-cd>365*24*60*60*1000)break;
+  }
+  document.getElementById('statTotal').textContent=total;
+  document.getElementById('statComplete').textContent=complete;
+  document.getElementById('statStreak').textContent=streak;
+}
+
+function showPhoto(src){document.getElementById('modalImg').src=src;document.getElementById('photoModal').classList.add('show');}
+function closeModal(){document.getElementById('photoModal').classList.remove('show');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
+
+init();
+</script>
+</body>
+</html>
